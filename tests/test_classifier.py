@@ -124,7 +124,8 @@ class TestEmailClassifier:
             body=''
         )
         assert category == 'other'
-        @pytest.mark.parametrize('subject,expected', [
+    
+    @pytest.mark.parametrize('subject,expected', [
         ('Вы выиграли приз', 'spam'),
         ('Критическая ошибка', 'incident'),
         ('Сломался сканер', 'hardware'),
@@ -219,6 +220,7 @@ class TestParser:
 
 
 # тесты граничных случаев
+
 class TestEdgeCases:
     # тесты граничных случаев и ошибок
     
@@ -258,7 +260,7 @@ class TestEdgeCases:
     
     def test_unicode_in_email(self, temp_dir):
         # проверяет поддержку кириллицы и спецсимволов
-        content = """Тема: Проблема с принтером 🖨
+        content = """Тема: Проблема с принтером 🖨️
 От кого: сотрудник@компания.рф
 
 Текст письма с эмодзи и кириллицей
