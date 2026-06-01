@@ -126,5 +126,6 @@ class EmailClassifier:
                 if keyword in text:
                     return category
         
+
         # Если ни одна из категорий не подошла
         return 'other'
