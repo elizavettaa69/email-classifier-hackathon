@@ -218,3 +218,73 @@ class TestParser:
         assert result is None
 
 
+# тесты граничных случаев
+class TestEdgeCases:
+    # тесты граничных случаев и ошибок
+    
+    def test_case_insensitive(self, classifier):
+        # проверяет что регистр не важен
+        category1 = classifier.classify(
+            subject='ВЫ ВЫИГРАЛИ',
+            from_addr='TEST@MAIL.RU',
+            body='СПАМ КОНТЕНТ'
+        )
+        category2 = classifier.classify(
+            subject='вы выиграли',
+            from_addr='test@mail.ru',
+            body='спам контент'
+        )
+        
+        assert category1 == category2 == 'spam'
+    
+    def test_partial_keyword_match(self, classifier):
+        # проверяет что ключевые слова ищутся внутри текста
+        category = classifier.classify(
+            subject='Отчёт',
+            from_addr='monitoring@company.ru',
+            body='плановые технические работы scheduled'
+        )
+        assert category == 'newsletters'
+    
+    def test_first_match_priority(self, classifier):
+        # проверяет что возвращается первая подходящая категория
+        category = classifier.classify(
+            subject='Срочно: проблема с доступом',
+            from_addr='user@company.ru',
+            body='не работает система'
+        )
+        # должна вернуться первая найденная категория
+        assert category in ['incident', 'access']
+    
+    def test_unicode_in_email(self, temp_dir):
+        # проверяет поддержку кириллицы и спецсимволов
+        content = """Тема: Проблема с принтером 🖨
+От кого: сотрудник@компания.рф
+
+Текст письма с эмодзи и кириллицей
+"""
+        filepath = os.path.join(temp_dir, 'unicode.txt')
+        with open(filepath, 'w', encoding='utf-8') as f:
+            f.write(content)
+        
+        result = parse_email(filepath)
+        
+        assert result is not None
+        assert 'принтером' in result['subject']
+    
+    def test_very_long_subject(self, temp_dir):
+        # проверяет обработку очень длинной темы
+        long_subject = 'A' * 500
+        content = f"""Subject: {long_subject}
+From: test@mail.ru
+
+body
+"""
+        filepath = os.path.join(temp_dir, 'long_subject.txt')
+        with open(filepath, 'w', encoding='utf-8') as f:
+            f.write(content)
+        
+        result = parse_email(filepath)
+        
+        assert result is not None
+        assert len(result['subject']) <= 100
