@@ -8,7 +8,7 @@ from pathlib import Path
 from src.parser import parse_email
 from src.classifier import EmailClassifier
 
-# Создаём классификатор
+# Создаём классификатор:
 classifier = EmailClassifier()
 
 # Создаём папки для результатов
