@@ -41,7 +41,7 @@ for file in files:
         shutil.move(file, dest)
         continue
     
-    # Определяем категорию
+    # Определяем категорию:
     category = classifier.classify(
         email['subject'],
         email['from_addr'], 
