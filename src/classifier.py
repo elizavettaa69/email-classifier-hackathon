@@ -111,11 +111,11 @@ class EmailClassifier:
         Классифицируем письмо по его содержимому
 
             subject: Тема письма
-            from_addr: Отправитель
+            from_addr: Отправитель письма
             body: текст письма
             
         Returns:
-            Название категории
+            название категории
         """
         # Склеиваем всё в один текст и приводим к нижнему регистру
         text = (f"{subject} {body} {from_addr}").lower()
@@ -126,5 +126,5 @@ class EmailClassifier:
                 if keyword in text:
                     return category
         
-        # Если ничего не подошло
+        # Если ни одна из категорий не подошла
         return 'other'
