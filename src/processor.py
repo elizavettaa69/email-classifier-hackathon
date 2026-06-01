@@ -55,4 +55,5 @@ for file in files:
     shutil.move(file, dest)
     print(f'  ✅ Перемещён!')
 
+# Выводим результат
 print('\n🎉 Готово!')
