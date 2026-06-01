@@ -72,14 +72,11 @@ def _parse_text_email(content: str) -> dict:
     # Перебираем строки по порядку
     for i, line in enumerate(lines):
         # Приводим строку к нижнему регистру 
-        
-        # Ищем, пока не нашли. Возможные варианты: "Subject:", "Тема:", "Тема :"
+        lower_line = line.lower()
+        # Ищем тему
         if not subject_found:
-            # Регулярное выражение: ищем в начале строки одно из слов, за которым может быть двоеточие или точка с запятой
-            # re.search ищет подстроку по шаблону
             match = re.search(r'(subject|тема)\s*[:;]', lower_line)
             if match:
-                # Если нашли — извлекаем всё, что идёт после двоеточия
                 # разобиваем строку по двоеточию или точке с запятой, берем вторую часть
                 parts = re.split(r'[:;]', line, maxsplit=1)
                 if len(parts) > 1:
@@ -105,8 +102,7 @@ def _parse_text_email(content: str) -> dict:
         else:
             # Если мы ещё не нашли заголовки, но прошло много строк (> 10),
             # то, в файле нет заголовков. 
-            # Тогда считаем, что первая строка — тема,
-            # а всё остальное — тело.
+            # Тогда считаем, что первая строка — тема, а всё остальное — тело.
             if i > 10 and not subject_found and not from_found:
                 if not result['subject'] and lines:
                     result['subject'] = lines[0].strip()
@@ -146,7 +142,7 @@ def _parse_json_email(content: str) -> dict | None:
     
     # Пробуем распарсить строку как JSON
     try:
-        data = json.loads(content)   # превращает JSON-строку в словарь Python
+        data = json.loads(content)   
     except json.JSONDecodeError as e:
         # Невалидный JSON
         print(f"Ошибка парсинга JSON: {e}")
