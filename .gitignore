@@ -1,0 +1,19 @@
+# Python
+__pycache__/
+*.pyc
+
+# Результаты работы программы
+processed/
+
+# Логи и статистика
+*.log
+stats.json
+
+# macOS
+.DS_Store
+
+# VS Code
+.vscode/
+
+# Временные файлы
+*.tmp
