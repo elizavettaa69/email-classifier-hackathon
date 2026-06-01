@@ -1,130 +1,58 @@
-"""Модуль классификации писем по категориям"""
+"""
+Главный скрипт для классификации email-писем.
+Читает файлы из папки inbox/, классифицирует и раскладывает по папкам.
+"""
 
-import json              #для чтения config.json
-from pathlib import Path #для проверки существования файла
+import shutil
+from pathlib import Path
+from src.parser import parse_email
+from src.classifier import EmailClassifier
 
+# Создаём классификатор
+classifier = EmailClassifier()
 
-class EmailClassifier:
-    """
-    Классификатор входящих писем
-    
-    Категории (8 штук):
-    - spam: спам, фишинг, подозрительные ссылки, реклама
-    - newsletters: рассылки, дайджесты, отчёты мониторинга, приглашения
-    - incident: критичные инциденты, сбои, ошибки
-    - hardware: проблемы с оборудованием
-    - software: проблемы с программным обеспечением
-    - access: запросы доступов, права, новые сотрудники
-    - finance: счета, акты, договоры, оплата
-    - other: всё, что не подошло
-    """
-    
-    #конструктор, который загружает правила из config.json
-    def __init__(self, config_file='config.json'):
-        """
-        Загружает правила из JSON
-        Если файла нет — использует стандартные правила
-        """
-        self.rules = self._load_rules(config_file)
-    
-    # метод загрузки правил
-    def _load_rules(self, config_file):
-        """
-        Загружает правила из config.json
-        Если файла нет — возвращает стандартные правила.
-        """
-        config_path = Path(config_file)
-        
-        if config_path.exists():
-            with open(config_file, 'r', encoding='utf-8') as f:
-                data = json.load(f)
-            rules = [(cat['name'], cat['keywords']) for cat in data['categories']]
-            print(f"Загружены правила из {config_file}")
-            return rules
-        else:
-            # Стандартные правила (если нет config.json)
-            print(f"{config_file} не найден, использую стандартные правила")
-            return self._get_default_rules()
-    
-    # старые правила вынесkb в отдельный метод
-    def _get_default_rules(self):
-        """Возвращает стандартные правила """
-        return [
-            # 1. Спам 
-            ('spam', [
-                'заработок', 'доход', 'подработка', 'инвестиции', 'вложения', 'акции',
-                'крипта', 'криптовалюта', 'биткоин', 'выплата', 'компенсация',
-                'миллион', 'бонус', 'выигрыш', 'вы выиграли', 'приз', 'розыгрыш',
-                'скидка', 'акция', 'распродажа', 'бесплатно', 'подарок', 'купить',
-                'вебинар', 'курс', 'обучение', 'новая версия',
-                'казино', 'ставки', 'слоты', 'виагра', 'похудение', 'лекарство',
-                'знакомства', 'секс',
-                'подтвердите личность', 'введите логин', 'аккаунт будет заблокирован',
-                'пароль истекает'
-            ]),
-            
-            # 2. Инциденты 
-            ('incident', [
-                'критичный', 'критически', 'ошибка', 'не отвечает',
-                'работа остановлена', 'срочно', 'не работает',
-                'error', 'падение', 'массовый сбой', 'недоступен', 
-                'проблема не устранена', 'по-прежнему'
-            ]),
-            
-            # 3. Оборудование
-            ('hardware', [
-                'гарнитура', 'сканер', 'принтер', 'ноутбук', 'мышь',
-                'не включается', 'замена', 'ремонт', 'сломался', 'не определяется', 
-                'экран', 'клавиатура', 'системный блок', 'монитор'
-            ]),
-            
-            # 4. Программное обеспечение
-            ('software', [
-                'chrome', 'zoom', 'excel', 'adobe', 'антивирус', 'outlook',
-                'зависает', 'установка', 'обновление', 'браузер',
-                'не открывает', 'установщик зависает', 'world'
-            ]),
-            
-            # 5. Запросы доступов и прав
-            ('access', [
-                'доступ', 'права', 'сотрудник', 'выдать', 'подготовить',
-                'доступы', 'восстановить', 'gitlab',
-                'vpn', '1с', 'рабочее место', 'сотрудники'
-            ]),
-            
-            # 6. Финансовые документы
-            ('finance', [
-                'счёт', 'акт', 'оплата', 'договор', 'invoice',
-                'закрывающие документы', 'реквизиты', 'счет', 'платеж', 'документы'
-            ]),
-            
-            # 7. Рассылки и информационные письма
-            ('newsletters', [
-                'дайджест', 'отчёт мониторинга', 'плановые работы',
-                'приглашение', 'демо', 'корпоративный дайджест', 'созвон',
-                'встреча', 'напоминание'
-            ]),
-        ]
-    
-    def classify(self, subject: str, from_addr: str, body: str) -> str:
-        """
-        Классифицируем письмо по его содержимому
+# Создаём папки для результатов
+categories = ['spam', 'newsletters', 'incident', 'hardware', 
+              'software', 'access', 'finance', 'other']
 
-            subject: Тема письма
-            from_addr: Отправитель
-            body: текст письма
-            
-        Returns:
-            Название категории
-        """
-        # Склеиваем всё в один текст и приводим к нижнему регистру
-        text = (f"{subject} {body} {from_addr}").lower()
-        
-        # Проверяем правила в заданном порядке (теперь из self.rules)
-        for category, keywords in self.rules:
-            for keyword in keywords:
-                if keyword in text:
-                    return category
-        
-        # Если ничего не подошло
-        return 'other'
+for cat in categories:
+    Path(f'processed/{cat}').mkdir(parents=True, exist_ok=True)
+
+# Берём все файлы из папки inbox
+inbox = Path('inbox')
+
+if not inbox.exists():
+    print('❌ Нет папки inbox!')
+    exit()
+
+files = list(inbox.iterdir())
+print(f'📧 Найдено файлов: {len(files)}')
+
+# Обрабатываем каждый файл
+for file in files:
+    print(f'\n📄 Обработка: {file.name}')
+    
+    # Читаем письмо
+    email = parse_email(file)
+    
+    if email is None:
+        print('  ⚠️ Не могу прочитать -> other')
+        dest = f'processed/other/{file.name}'
+        shutil.move(file, dest)
+        continue
+    
+    # Определяем категорию
+    category = classifier.classify(
+        email['subject'],
+        email['from_addr'], 
+        email['body']
+    )
+    
+    print(f'  🏷️  Категория: {category}')
+    
+    # Перемещаем
+    dest = f'processed/{category}/{file.name}'
+    shutil.move(file, dest)
+    print(f'  ✅ Перемещён!')
+
+print('\n🎉 Готово!')
