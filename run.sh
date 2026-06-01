@@ -1,5 +1,5 @@
 
-echo "  Email Classifier - Hackathon 2026"
+echo " Email Classifier "
 
 # существует ли inbox
 if [ ! -d "inbox" ]; then
