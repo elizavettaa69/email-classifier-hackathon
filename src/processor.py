@@ -11,7 +11,7 @@ from src.classifier import EmailClassifier
 # Создаём классификатор:
 classifier = EmailClassifier()
 
-# Создаём папки для результатов
+# Создаём папки для результатов:
 categories = ['spam', 'newsletters', 'incident', 'hardware', 
               'software', 'access', 'finance', 'other']
 
